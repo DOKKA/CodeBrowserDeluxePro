@@ -19,16 +19,57 @@ namespace CodeBrowserDeluxePro
 	{
 		private ScintillaNET.Scintilla TextArea;
 		private HttpClient client;
+		private string Default_Font = "Consolas";
+
 		public Form1()
 		{
 			InitializeComponent();
 		}
 
-		static bool IsJSFile(string f)
+		private void Form1_Load(object sender, EventArgs e)
+		{
+			if (IsFontInstalled("Source Code Pro"))
+			{
+				Default_Font = "Source Code Pro";
+			}
+
+			TextArea = new ScintillaNET.Scintilla();
+			splitContainer1.Panel2.Controls.Add(TextArea);
+
+			// BASIC CONFIG
+			TextArea.Dock = System.Windows.Forms.DockStyle.Fill;
+			TextArea.TextChanged += (this.OnTextChanged);
+
+			client = new HttpClient();
+			//tvFiles.Nodes.AddRange()
+			string workspace = @"C:\Users\kevin\code";
+			tvFiles.Nodes.AddRange(GetNodes(workspace));
+
+
+
+			
+		}
+		
+
+		private bool IsFontInstalled(string fontName)
+		{
+			using (var testFont = new Font(fontName, 10))
+			{
+				return 0 == string.Compare(
+				fontName,
+				testFont.Name,
+				StringComparison.InvariantCultureIgnoreCase);
+			}
+		}
+
+
+
+		private static bool IsJSFile(string f)
 		{
 			return f != null &&
 				f.EndsWith(".js", StringComparison.Ordinal);
 		}
+
 
 		private MyTreeNode[] GetNodes(string path)
 		{
@@ -53,7 +94,7 @@ namespace CodeBrowserDeluxePro
 			return list.ToArray();
 		}
 		
-		private async Task<string> doThingAsync(string ThePath)
+		private async Task<string> requestTopLevel(string ThePath)
 		{
 			var values = new Dictionary<string, string>
 			{
@@ -67,17 +108,8 @@ namespace CodeBrowserDeluxePro
 			return await response.Content.ReadAsStringAsync();
 		}
 
-		private void Form1_Load(object sender, EventArgs e)
+		private void OnTextChanged(object sender, EventArgs e)
 		{
-			TextArea = new ScintillaNET.Scintilla();
-			splitContainer1.Panel2.Controls.Add(TextArea);
-
-			// BASIC CONFIG
-			TextArea.Dock = System.Windows.Forms.DockStyle.Fill;
-			client  = new HttpClient();
-			//tvFiles.Nodes.AddRange()
-			string workspace = @"C:\Users\kevin\code";
-			tvFiles.Nodes.AddRange(GetNodes(workspace));
 
 		}
 
@@ -93,22 +125,22 @@ namespace CodeBrowserDeluxePro
 			{
 				try
 				{
-					string resp = await doThingAsync(node.ThePath);
+					string resp = await requestTopLevel(node.ThePath);
 					tvFiles.SelectedNode.Nodes.AddRange(GetCodeNodes(resp));
 					node.isLoaded = true;
 				}
 				catch (Exception ex)
 				{
-
+					MessageBox.Show("Please start the server");
 				}
-				
 
+				TextArea.Text = File.ReadAllText(node.ThePath);
 			}
 			if(node.NodeType == NodeType.Code)
 			{
 				string fileText = File.ReadAllText(((MyTreeNode)node.Parent).ThePath);
-				string  shit = fileText.Substring(node.Start, node.End - node.Start);
-				TextArea.Text = shit;
+				string  chunk = fileText.Substring(node.Start, node.End - node.Start);
+				TextArea.Text = chunk;
 			}
 			
 		}
@@ -124,8 +156,6 @@ namespace CodeBrowserDeluxePro
 			}).ToArray();
 
 		}
-
-
 	}
 
 	public class Code
