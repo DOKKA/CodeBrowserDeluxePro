@@ -19,7 +19,7 @@ namespace CodeBrowserDeluxePro
 	{
 		private ScintillaNET.Scintilla TextArea;
 		private HttpClient client;
-		private string Default_Font = "Consolas";
+		
 
 		public Form1()
 		{
@@ -28,10 +28,7 @@ namespace CodeBrowserDeluxePro
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
-			if (IsFontInstalled("Source Code Pro"))
-			{
-				Default_Font = "Source Code Pro";
-			}
+
 
 			TextArea = new ScintillaNET.Scintilla();
 			splitContainer1.Panel2.Controls.Add(TextArea);
@@ -45,22 +42,13 @@ namespace CodeBrowserDeluxePro
 			string workspace = @"C:\Users\kevin\code";
 			tvFiles.Nodes.AddRange(GetNodes(workspace));
 
+			ScintillaHelper sh = new ScintillaHelper { TextArea = TextArea };
 
-
+			sh.Init();
 			
 		}
 		
 
-		private bool IsFontInstalled(string fontName)
-		{
-			using (var testFont = new Font(fontName, 10))
-			{
-				return 0 == string.Compare(
-				fontName,
-				testFont.Name,
-				StringComparison.InvariantCultureIgnoreCase);
-			}
-		}
 
 
 
