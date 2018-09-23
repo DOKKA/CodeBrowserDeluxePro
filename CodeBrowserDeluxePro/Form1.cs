@@ -101,6 +101,59 @@ namespace CodeBrowserDeluxePro
 
 		}
 
+		private Syntax ExtensionToSyntax(string path)
+		{
+			StringComparison sc = StringComparison.OrdinalIgnoreCase;
+			if (path.EndsWith(".cpp", sc))
+			{
+				return Syntax.CPP;
+			}
+			else if (path.EndsWith(".css", sc))
+			{
+				return Syntax.CSS;
+			}
+			else if (path.EndsWith(".html", sc) || path.EndsWith(".htm", sc))
+			{
+				return Syntax.HTML;
+			}
+			else if (path.EndsWith(".js", sc))
+			{
+				return Syntax.JAVASCRIPT;
+			}
+			else if (path.EndsWith(".json", sc))
+			{
+				return Syntax.JSON;
+			}
+			else if (path.EndsWith(".jsx", sc))
+			{
+				return Syntax.JSX;
+			}
+			else if (path.EndsWith(".less", sc))
+			{
+				return Syntax.LESS;
+			}
+			if (path.EndsWith(".scss", sc))
+			{
+				return Syntax.SASS;
+			}
+			if (path.EndsWith(".ts", sc))
+			{
+				return Syntax.TS;
+			}
+			if (path.EndsWith(".txt", sc))
+			{
+				return Syntax.TXT;
+			}
+			if (path.EndsWith(".xml", sc))
+			{
+				return Syntax.XML;
+			}
+			else
+			{
+				return Syntax.TXT;
+			}
+		}
+
 		private async void tvFiles_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			var node = (MyTreeNode)e.Node;
@@ -120,6 +173,7 @@ namespace CodeBrowserDeluxePro
 				case NodeType.File:
 					{
 						TextArea.Text = File.ReadAllText(node.ThePath);
+						sh.Init(ExtensionToSyntax(node.ThePath));
 						break;
 					}
 				case NodeType.JSFile:
