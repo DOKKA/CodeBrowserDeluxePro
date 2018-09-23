@@ -8,6 +8,21 @@ using System.Threading.Tasks;
 
 namespace CodeBrowserDeluxePro
 {
+	public enum Syntax
+	{
+		JAVASCRIPT,
+		JSON,
+		CPP,
+		HTML,
+		XML,
+		CSS,
+		LESS,
+		SASS,
+		JSX,
+		TS,
+		TXT
+	}
+
 	class ScintillaHelper
 	{
 
@@ -16,7 +31,7 @@ namespace CodeBrowserDeluxePro
 			return Color.FromArgb(255, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
 		}
 
-
+		private bool isMarginClickBound = false;
 		/// <summary>
 		/// the background color of the text area
 		/// </summary>
@@ -64,8 +79,9 @@ namespace CodeBrowserDeluxePro
 			}
 		}
 
-		public void Init()
+		public void Init(Syntax syntax)
 		{
+
 			if (IsFontInstalled("Source Code Pro"))
 			{
 				Default_Font = "Source Code Pro";
@@ -76,7 +92,15 @@ namespace CodeBrowserDeluxePro
 
 			// STYLING
 			InitColors();
-			InitSyntaxColoring();
+			if(syntax == Syntax.XML || syntax == Syntax.HTML)
+			{
+				InitSyntaxColoringXML(syntax);
+			} else	{
+				InitSyntaxColoring(syntax);
+				//InitSyntaxColoringXML(syntax);
+			}
+			
+
 
 			// NUMBER MARGIN
 			InitNumberMargin();
@@ -96,7 +120,7 @@ namespace CodeBrowserDeluxePro
 
 		}
 
-		private void InitSyntaxColoring()
+		private void InitSyntaxColoring(Syntax syntax)
 		{
 
 			// Configure the default style
@@ -136,6 +160,32 @@ namespace CodeBrowserDeluxePro
 
 		}
 
+
+		private void InitSyntaxColoringXML(Syntax syntax)
+		{
+			// Configure the default style
+			TextArea.StyleResetDefault();
+			TextArea.Styles[Style.Default].Font = Default_Font;
+			TextArea.Styles[Style.Default].Size = 10;
+			TextArea.Styles[Style.Default].BackColor = IntToColor(0x212121);
+			TextArea.Styles[Style.Default].ForeColor = IntToColor(0xFFFFFF);
+			TextArea.CaretForeColor = IntToColor(0xFFFFFF);
+			TextArea.CaretLineBackColor = IntToColor(0x2F3142);
+			TextArea.CaretLineVisible = true;
+			TextArea.StyleClearAll();
+
+			TextArea.Styles[Style.Xml.Attribute].ForeColor = IntToColor(0xFF5555);
+			TextArea.Styles[Style.Xml.Entity].ForeColor = IntToColor(0xC5A3FF);
+			TextArea.Styles[Style.Xml.Comment].ForeColor = IntToColor(0x50FA7B);
+			TextArea.Styles[Style.Xml.Tag].ForeColor = IntToColor(0xCEAC00);
+			TextArea.Styles[Style.Xml.TagEnd].ForeColor = IntToColor(0xCEAC00);
+			TextArea.Styles[Style.Xml.DoubleString].ForeColor = IntToColor(0xFF5555);
+			TextArea.Styles[Style.Xml.SingleString].ForeColor = IntToColor(0xFF9205);
+
+			TextArea.Lexer = Lexer.Html;
+		}
+
+
 		private void InitNumberMargin()
 		{
 
@@ -149,8 +199,11 @@ namespace CodeBrowserDeluxePro
 			nums.Type = MarginType.Number;
 			nums.Sensitive = true;
 			nums.Mask = 0;
-
-			TextArea.MarginClick += TextArea_MarginClick;
+			if (!isMarginClickBound)
+			{
+				TextArea.MarginClick += TextArea_MarginClick;
+			}
+			
 		}
 
 		private void InitBookmarkMargin()

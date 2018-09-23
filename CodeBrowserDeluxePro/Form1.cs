@@ -19,7 +19,7 @@ namespace CodeBrowserDeluxePro
 	{
 		private ScintillaNET.Scintilla TextArea;
 		private HttpClient client;
-		
+		ScintillaHelper sh;
 
 		public Form1()
 		{
@@ -42,9 +42,9 @@ namespace CodeBrowserDeluxePro
 			string workspace = @"C:\Users\kevin\code";
 			tvFiles.Nodes.AddRange(GetNodes(workspace));
 
-			ScintillaHelper sh = new ScintillaHelper { TextArea = TextArea };
+			 sh = new ScintillaHelper { TextArea = TextArea };
 
-			sh.Init();
+			sh.Init(Syntax.XML);
 			
 		}
 		
@@ -104,33 +104,56 @@ namespace CodeBrowserDeluxePro
 		private async void tvFiles_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			var node = (MyTreeNode)e.Node;
-			if(node.NodeType == NodeType.Folder && !node.isLoaded)
+			var isLoaded = node.isLoaded;
+			switch (node.NodeType)
 			{
-				tvFiles.SelectedNode.Nodes.AddRange(GetNodes(node.ThePath));
-				node.isLoaded = true;
+				case NodeType.Folder:
+					{
+						if (!isLoaded)
+						{
+							tvFiles.SelectedNode.Nodes.AddRange(GetNodes(node.ThePath));
+							node.isLoaded = true;
+						}
+						TextArea.Text = "";
+						break;
+					}
+				case NodeType.File:
+					{
+						TextArea.Text = File.ReadAllText(node.ThePath);
+						break;
+					}
+				case NodeType.JSFile:
+					{
+						sh.Init(Syntax.JAVASCRIPT);
+						if (!isLoaded)
+						{
+							try
+							{
+								string resp = await requestTopLevel(node.ThePath);
+								tvFiles.SelectedNode.Nodes.AddRange(GetCodeNodes(resp));
+								node.isLoaded = true;
+							}
+							catch (Exception ex)
+							{
+								MessageBox.Show("Please start the server");
+							}
+						}
+						TextArea.Text = File.ReadAllText(node.ThePath);
+						break;
+					}
+				case NodeType.Code:
+					{
+						sh.Init(Syntax.JAVASCRIPT);
+						string fileText = File.ReadAllText(((MyTreeNode)node.Parent).ThePath);
+						string chunk = fileText.Substring(node.Start, node.End - node.Start);
+						TextArea.Text = chunk;
+						break;
+					}
+				default:
+					{
+						break;
+					}
 			}
-			if(node.NodeType == NodeType.JSFile && !node.isLoaded)
-			{
-				try
-				{
-					string resp = await requestTopLevel(node.ThePath);
-					tvFiles.SelectedNode.Nodes.AddRange(GetCodeNodes(resp));
-					node.isLoaded = true;
-				}
-				catch (Exception ex)
-				{
-					MessageBox.Show("Please start the server");
-				}
-
-				TextArea.Text = File.ReadAllText(node.ThePath);
-			}
-			if(node.NodeType == NodeType.Code)
-			{
-				string fileText = File.ReadAllText(((MyTreeNode)node.Parent).ThePath);
-				string  chunk = fileText.Substring(node.Start, node.End - node.Start);
-				TextArea.Text = chunk;
-			}
-			
 		}
 
 		private MyTreeNode[] GetCodeNodes(string json)
