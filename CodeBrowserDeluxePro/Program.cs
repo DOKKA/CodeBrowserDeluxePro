@@ -12,11 +12,16 @@ namespace CodeBrowserDeluxePro
 		/// The main entry point for the application.
 		/// </summary>
 		[STAThread]
-		static void Main()
+		static void Main(string[] args)
 		{
+			string startPath = null;
+			if(args.Length > 0)
+			{
+				startPath = args[1];
+			}
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new Form1());
+			Application.Run(new Form1(startPath));
 		}
 	}
 }

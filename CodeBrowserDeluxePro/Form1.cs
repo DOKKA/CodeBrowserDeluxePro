@@ -11,7 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using ScintillaNET;
-
+using System.Configuration;
+using System.Diagnostics;
 
 namespace CodeBrowserDeluxePro
 {
@@ -19,36 +20,76 @@ namespace CodeBrowserDeluxePro
 	{
 		private ScintillaNET.Scintilla TextArea;
 		private HttpClient client;
-		ScintillaHelper sh;
-
-		public Form1()
+		private ScintillaHelper sh;
+		private string workingDirectory;
+		private string startPath;
+		public Form1(string theStartPath)
 		{
+			startPath = theStartPath;
 			InitializeComponent();
 		}
 
 		private void Form1_Load(object sender, EventArgs e)
 		{
 
-
+			string workspace = ConfigurationManager.AppSettings["workspace"];
+			workingDirectory = ConfigurationManager.AppSettings["workingDirectory"];
 			TextArea = new ScintillaNET.Scintilla();
 			splitContainer1.Panel2.Controls.Add(TextArea);
 
 			// BASIC CONFIG
 			TextArea.Dock = System.Windows.Forms.DockStyle.Fill;
 			TextArea.TextChanged += (this.OnTextChanged);
+			tvFiles.MouseDown += (this.onNodeMouseClick);
 
 			client = new HttpClient();
 			//tvFiles.Nodes.AddRange()
-			string workspace = @"C:\Users\kevin\code";
+			//string workspace = @"C:\Users\kevin\code";
 			tvFiles.Nodes.AddRange(GetNodes(workspace));
-
-			 sh = new ScintillaHelper { TextArea = TextArea };
+			
+			sh = new ScintillaHelper { TextArea = TextArea };
 
 			sh.Init(Syntax.XML);
+
+			if (startPath !=null && startPath.Length > 0)
+			{
+				string[] arrStartPath = startPath.Replace(workspace, "").Split('\\');
+				foreach(string pathPart in arrStartPath)
+				{
+					if(pathPart.Length> 0)
+					{
+						NodeNavigate(pathPart);
+					}
+				}
+			}
+		}
+
+		private async void NodeNavigate(string pathPart)
+		{
+			var nodes = tvFiles.Nodes.Find(pathPart, false);
+			if(nodes.Length > 0)
+			{
+				var node = nodes[0];
+				tvFiles.SelectedNode = node;
+				var x = new TreeViewEventArgs(node);
+				//this is async and you need to await it
+				tvFiles_AfterSelect(tvFiles, x);
+				node.Expand();
+			}
 			
 		}
-		
 
+		private void onNodeMouseClick(object sender, MouseEventArgs e)
+		{
+			if(e.Button == MouseButtons.Middle)
+			{
+				var node = (MyTreeNode)tvFiles.SelectedNode;
+				ProcessStartInfo p1 = new ProcessStartInfo("CodeBrowserDeluxePro.exe");
+				p1.WorkingDirectory = workingDirectory;
+				p1.Arguments = String.Format("--path \"{0}\"", node.ThePath);
+				Process process = Process.Start(p1);
+			}
+		}
 
 
 
@@ -65,6 +106,7 @@ namespace CodeBrowserDeluxePro
 			var files = Directory.GetFiles(path).Select(f => new MyTreeNode
 			{
 				Text = Path.GetFileName(f),
+				Name = Path.GetFileName(f),
 				NodeType = IsJSFile(f) ? NodeType.JSFile : NodeType.File,
 				ThePath = f
 			});
@@ -72,6 +114,7 @@ namespace CodeBrowserDeluxePro
 			var folders = Directory.GetDirectories(path).Select(d => new MyTreeNode
 			{
 				Text = Path.GetFileName(d),
+				Name = Path.GetFileName(d),
 				NodeType = NodeType.Folder,
 				ThePath = d
 			});
